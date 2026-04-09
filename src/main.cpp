@@ -263,17 +263,23 @@ void setup()
   Serial.begin(115200);
   delay(2000); // 2sec boot delay is sufficient for most serial monitors
   Serial.println("ESP32-S3 WiFi + RGB LED + NTP + OTA Starting...");
-  // Generate unique device ID from eFuse MAC
-  uint8_t mac[6];
-  esp_efuse_mac_get_default(mac);
-  char mac_num[13];
-  sprintf(mac_num, "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-  String mac_str(mac_num);
-  g_deviceId = "COSYFARM-" + mac_str;
-  Serial.printf("Device ID: %s\n", g_deviceId.c_str());
+// Load or generate unique device ID from eFuse MAC (full decimal as uint64_t)
   prefs.begin("device", false);
-  prefs.putString("device-id", g_deviceId);
+  g_deviceId = prefs.getString("device-id", "");
   prefs.end();
+  if (g_deviceId.length() == 0) {
+    uint8_t mac[6];
+    esp_efuse_mac_get_default(mac);
+uint64_t mac_decimal = 0;
+    for (int i = 0; i < 6; i++) {
+      mac_decimal = (mac_decimal << 8) | mac[i];
+    }
+    g_deviceId = "COSYFARM-" + String(mac_decimal);
+  Serial.printf("Device ID: %s\n", g_deviceId.c_str());
+    prefs.begin("device", false);
+    prefs.putString("device-id", g_deviceId);
+    prefs.end();
+  }
 
   rtcInit(); // Initialize RTC and load Geo-Cache
 
