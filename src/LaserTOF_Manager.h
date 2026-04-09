@@ -7,11 +7,12 @@ void laserInit();
 void laserUpdate();
 void laserReset();
 
-extern float g_laserDistanceCm;
-extern float g_laserLevelPct;
+
 extern float g_laserStdDev;
 extern float g_laserHealthPct;
 extern bool laserEnabled;
+extern bool g_laserReflectionFlag;
+extern float g_laserCorrectedDistCm;
 
 // FreeRTOS task function
 void laserTask(void *parameter);

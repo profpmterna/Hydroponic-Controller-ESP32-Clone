@@ -11,7 +11,8 @@ float g_laserLevelPct = 0.0f;
 float g_laserStdDev = 0.0f;
 float g_laserHealthPct = 100.0f;
 bool laserEnabled = false;
-
+bool g_laserReflectionFlag = false;
+float g_laserCorrectedDistCm = 0.0f;
 static int laserConsecutiveFails = 0;
 const int MAX_LASER_FAILS = 10;
 
@@ -72,6 +73,7 @@ void laserReset()
     laserEnabled = true;
     tof_samples_filled = false;
     tof_sample_idx = 0;
+    g_laserReflectionFlag = false;
     Serial.println("Laser: Sensor flags reset.");
 }
 
@@ -110,7 +112,7 @@ void laserUpdate()
                 validReadings.push_back(distCm);
             }
         }
-        vTaskDelay(pdMS_TO_TICKS(40)); // Small delay between pulses to reduce interference
+        vTaskDelay(pdMS_TO_TICKS(60)); // Increased delay for water surface settling to reduce reflections
     }
 
     // --- Signal Quality (Health) Calculation ---
@@ -136,18 +138,33 @@ void laserUpdate()
 
         float medianDist = validReadings[validReadings.size() / 2];
 
+        // Water surface stability: Reflection & Refractive index correction
+        g_laserReflectionFlag = false;
+        if (medianDist < TOF_REFLECTION_THRESHOLD_CM)
+        {
+            g_laserReflectionFlag = true;
+            Serial.printf("Laser: Reflection interference detected (%.1f cm), burst rejected\n", medianDist);
+            g_laserHealthPct = max(0.0f, g_laserHealthPct - 10.0f); // Penalty for reflection event
+            laserConsecutiveFails++;
+            return;
+        }
+
+        // Apply refractive index correction for water (apparent depth = real / n)
+        g_laserCorrectedDistCm = medianDist / WATER_REFRACTIVE_INDEX;
+        Serial.printf("Laser: Refractive corrected: raw %.1f -> corrected %.1f cm (n=%.2f)\n", medianDist, g_laserCorrectedDistCm, WATER_REFRACTIVE_INDEX);
+
         laserConsecutiveFails = 0;
 
-        // --- Filtering Stage: Adaptive EMA ---
+        // --- Filtering Stage: Adaptive EMA --- (use corrected dist)
         if (g_laserDistanceCm <= 0)
         {
-            g_laserDistanceCm = medianDist; // Seed
+            g_laserDistanceCm = g_laserCorrectedDistCm; // Seed with corrected
         }
         else
         {
-            float diff = abs(medianDist - g_laserDistanceCm);
+            float diff = abs(g_laserCorrectedDistCm - g_laserDistanceCm);
             float currentAlpha = (diff > TOF_JUMP_THRESHOLD) ? TOF_EMA_FAST : TOF_EMA_SLOW;
-            g_laserDistanceCm = (currentAlpha * medianDist) + (1.0f - currentAlpha) * g_laserDistanceCm;
+            g_laserDistanceCm = (currentAlpha * g_laserCorrectedDistCm) + (1.0f - currentAlpha) * g_laserDistanceCm;
         }
 
         // --- Jitter Analysis (Standard Deviation) ---
@@ -191,3 +208,4 @@ void laserTask(void *parameter)
         vTaskDelay(pdMS_TO_TICKS(5000)); // Sync with ultrasonic 5s cycle
     }
 }
+

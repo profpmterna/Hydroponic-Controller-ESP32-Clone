@@ -116,6 +116,11 @@ extern bool laserEnabled;
 #define TOF_MEDIAN_SAMPLES 7       // Samples for median burst
 #define TOF_MAX_SPREAD_CM 2.0f     // Max difference between min/max in a burst
 
+// Water surface LaserTOF stability (reflections, refraction)
+#define WATER_REFRACTIVE_INDEX 1.33f
+#define TOF_REFLECTION_THRESHOLD_CM 8.0f  // Reject median < this as reflection
+#define TOF_WATER_COR
+
 // Calibration for a 30cm Tank
 #define TANK_HEIGHT_CM 30.0f      // Physical height of the tank
 #define TANK_MOTOR_SUCTION_CM 12.0f // Height of suction mouth from bottom
