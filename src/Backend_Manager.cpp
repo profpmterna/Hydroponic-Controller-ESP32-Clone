@@ -17,7 +17,7 @@ extern float avg_humid_pct;
 
 static bool backendActive = true;
 static unsigned long lastPost = 0;
-const unsigned long POST_INTERVAL = 30000; // 30s
+const unsigned long POST_INTERVAL = 60000; // 1 minute
 
 bool isBackendConnected()
 {
@@ -90,7 +90,12 @@ void backendTask(void *parameter)
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 
-    Serial.println("Backend: NGROK HTTP POST (-5/EOF solved).");
+    Serial.println("Backend: Initial availability check after NTP/OTA.");
+
+    // Perform one-time availability check before starting periodic sends
+    backendCheckAvailability();
+
+    Serial.println("Backend: Check complete. Starting periodic status sends.");
 
     for (;;)
     {
@@ -106,7 +111,50 @@ void backendTask(void *parameter)
     }
 }
 
+void backendCheckAvailability();
+
+// Check backend server availability with HEAD request (no JSON send)
+void backendCheckAvailability()
+{
+    if (!wifiConnected)
+    {
+        Serial.println("[BACKEND] WiFi not connected, skipping check.");
+        backendActive = false;
+        return;
+    }
+
+    WiFiClient client;
+    client.setTimeout(10000); // 10s timeout
+
+    HTTPClient http;
+    String url = CMS_SERVER_URL;
+    Serial.printf("[BACKEND] Availability check HEAD to: %s\n", url.c_str());
+
+    http.begin(client, url);
+    http.addHeader("X-API-Key", CMS_API_KEY);
+    http.setFollowRedirects(HTTPC_DISABLE_FOLLOW_REDIRECTS);
+
+    int httpCode = http.sendRequest("GET"); // GET request for availability (HEAD 405, use GET no body)
+    String response = http.getString();
+
+    Serial.printf("[BACKEND] HEAD %d (%d bytes)\n", httpCode, response.length());
+
+    if (httpCode >= 200 && httpCode < 500)
+    { // Accept 2xx-4xx as available (405 allowed, server up)
+        backendActive = true;
+        Serial.printf("[BACKEND] Server available (HTTP %d)\n", httpCode);
+    }
+    else
+    {
+        backendActive = false;
+        Serial.printf("[BACKEND] Server unavailable (HTTP %d): %s\n", httpCode, response.substring(0, 100).c_str());
+    }
+
+    http.end();
+}
+
 void backendInit() {} // Stateless
 
 void backendSendStatus();
 bool isBackendConnected();
+void backendCheckAvailability();
