@@ -5,7 +5,7 @@
 int g_co2Ppm = 0;
 int g_co2Temp = 0;
 float g_co2StdDev = 0.0f;
-bool co2Enabled = true;
+bool co2Enabled = false;
 bool co2WarmedUp = false;
 
 static HardwareSerial mhzSerial(2); // Use UART2
@@ -30,8 +30,14 @@ bool co2_samples_filled = false;
 
 void co2Init()
 {
+#if !HW_ENABLE_MHZ19
+    co2Enabled = false;
+    Serial.println("CO2: Disabled by hardware flag.");
+    return;
+#endif
     mhzSerial.begin(9600, SERIAL_8N1, PIN_MHZ_RX, PIN_MHZ_TX);
     mhzSerial.setTimeout(150); // Prevent long task blocks if sensor is unplugged
+    co2Enabled = true;
     lastCo2Recovery = millis();
     Serial.println("CO2 Manager: MH-Z19E Initialized on UART2");
 }
@@ -197,6 +203,11 @@ void co2Update()
 
 void co2Task(void *parameter)
 {
+#if !HW_ENABLE_MHZ19
+    Serial.println(F("CO2: Disabled by hardware flag. Task terminating."));
+    vTaskDelete(NULL);
+#endif
+
     Serial.println("CO2 Task: Monitoring CO2 levels started");
     // Initial delay to allow UART stability
     vTaskDelay(pdMS_TO_TICKS(2000));

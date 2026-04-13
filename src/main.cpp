@@ -367,6 +367,7 @@ void setup()
       1,              // Priority of the task
       NULL);          // Task handle
 
+#if HW_ENABLE_MHZ19
   co2Init();
   xTaskCreate(
       co2Task,
@@ -375,7 +376,9 @@ void setup()
       NULL,
       1,
       NULL);
+#endif
 
+#if HW_ENABLE_TOF
   laserInit();
   xTaskCreate(
       laserTask,
@@ -384,7 +387,9 @@ void setup()
       NULL,
       1,
       NULL);
+#endif
 
+#if HW_ENABLE_AC_PUMP
   xTaskCreate(
       acWaterTask,
       "ACWaterPump",
@@ -392,7 +397,9 @@ void setup()
       NULL,
       1,
       NULL);
+#endif
 
+#if HW_ENABLE_ULTRASONIC || HW_ENABLE_DS18B20
   tankInit();
   xTaskCreate(
       tankTask,
@@ -401,7 +408,9 @@ void setup()
       NULL,
       1,
       NULL);
+#endif
 
+#if HW_ENABLE_CIRC_PUMP
   xTaskCreate(
       circTask,
       "Circulation",
@@ -409,7 +418,9 @@ void setup()
       NULL,
       1,
       NULL);
+#endif
 
+#if HW_ENABLE_DHT22
   thermalInit();
   xTaskCreate(
       thermalTask,
@@ -418,7 +429,9 @@ void setup()
       NULL,
       1,
       NULL);
+#endif
 
+#if HW_ENABLE_BACKEND
   xTaskCreate(
       backendTask,
       "Backend",
@@ -426,6 +439,7 @@ void setup()
       NULL,
       2, // Increased priority to ensure smooth SSL/WSS handshakes
       NULL);
+#endif
 } // Close setup()
 
 void loop()

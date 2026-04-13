@@ -1,4 +1,5 @@
 #include "LaserTOF_Manager.h"
+#include "define.h"
 #include <Wire.h>
 #include <Adafruit_VL53L0X.h>
 #include <vector>
@@ -29,6 +30,11 @@ const float TOF_EMA_FAST = 0.70f;
 
 void laserInit()
 {
+#if !HW_ENABLE_TOF
+    laserEnabled = false;
+    Serial.println(F("Laser TOF: Disabled by hardware flag."));
+    return;
+#endif
     // Pre-initialization: Ensure pins are driven high to help the I2C bus start cleanly.
     pinMode(PIN_TOF_SDA, INPUT_PULLUP);
     pinMode(PIN_TOF_SCL, INPUT_PULLUP);
@@ -232,6 +238,11 @@ void laserUpdate()
 
 void laserTask(void *parameter)
 {
+#if !HW_ENABLE_TOF
+    Serial.println(F("Laser TOF: Disabled by hardware flag. Task terminating."));
+    vTaskDelete(NULL);
+#endif
+
     Serial.println("Laser Task: Parallel water level monitoring started");
     for (;;)
     {

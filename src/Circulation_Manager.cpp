@@ -16,6 +16,11 @@ void triggerManualCirc()
 
 void circInit()
 {
+#if !HW_ENABLE_CIRC_PUMP
+    g_circPumpEnabled = false;
+    Serial.println("Circulation: Disabled by hardware flag.");
+    return;
+#endif
     pinMode(PIN_CIRC_PUMP, OUTPUT);
     digitalWrite(PIN_CIRC_PUMP, LOW);
     Serial.println("Circulation Manager: Initialized (GPIO15 Pump)");
@@ -88,6 +93,11 @@ void circUpdate()
 
 void circTask(void *parameter)
 {
+#if !HW_ENABLE_CIRC_PUMP
+    Serial.println(F("Circulation: Disabled by hardware flag. Task terminating."));
+    vTaskDelete(NULL);
+#endif
+
     circInit();
     for (;;)
     {

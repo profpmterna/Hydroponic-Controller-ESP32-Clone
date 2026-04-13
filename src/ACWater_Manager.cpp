@@ -18,6 +18,10 @@ static ACState currentACState = IDLE;
 
 void acWaterInit()
 {
+#if !HW_ENABLE_AC_PUMP
+    Serial.println("ACWater: Disabled by hardware flag.");
+    return;
+#endif
     pinMode(PIN_AC_FLOAT, INPUT_PULLUP);
     pinMode(PIN_AC_PUMP, OUTPUT);
     digitalWrite(PIN_AC_PUMP, LOW);
@@ -129,6 +133,11 @@ void acWaterResetDaily()
 
 void acWaterTask(void *parameter)
 {
+#if !HW_ENABLE_AC_PUMP
+    Serial.println(F("ACWater: Disabled by hardware flag. Task terminating."));
+    vTaskDelete(NULL);
+#endif
+
     acWaterInit();
     for (;;)
     {

@@ -9,7 +9,7 @@ float avg_temp_c = 0.0f;
 float avg_humid_pct = 0.0f;
 float g_heatIndex = 0.0f;
 float g_thermalStdDev = 0.0f;
-bool dhtEnabled = true;     // Tracks sensor health
+bool dhtEnabled = false;     // Tracks sensor health
 
 static int dhtConsecutiveFails = 0;
 const int MAX_DHT_FAILS = 5; // Disable after 10 seconds of failure (5 samples * 2s)
@@ -29,7 +29,13 @@ const unsigned long RECOVERY_INTERVAL_MS = 600000; // 10 minutes (600,000 ms)
 
 void thermalInit()
 {
+#if !HW_ENABLE_DHT22
+  dhtEnabled = false;
+  Serial.println(F("Thermal: DHT22 disabled by hardware flag."));
+  return;
+#endif
   dht.begin();
+  dhtEnabled = true;
   Serial.printf("Thermal Manager: DHT22 on GPIO%d initialized\n", PIN_DHT22);
 
   lastRecoveryAttempt = millis();
@@ -137,6 +143,11 @@ void thermalUpdate()
 
 void thermalTask(void *parameter)
 {
+#if !HW_ENABLE_DHT22
+  Serial.println(F("Thermal: Disabled by hardware flag. Task terminating."));
+  vTaskDelete(NULL);
+#endif
+
   Serial.println("Thermal Task: 0.5Hz (2s) sampling started");
   for (;;)
   {

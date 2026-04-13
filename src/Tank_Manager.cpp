@@ -8,7 +8,7 @@
 float g_waterLevelPct = 0.0f;
 float g_waterDistanceCm = 0.0f;
 float g_waterVolumeL = 0.0f;
-bool tankSensorEnabled = true;
+bool tankSensorEnabled = false;
 bool g_tankDryRunRisk = false;
 float g_tankStdDev = 0.0f;      // Track sensor noise/precision
 float g_tankHealthPct = 100.0f; // 100% means all pings in burst succeeded
@@ -17,7 +17,7 @@ OneWire oneWire(PIN_DS18B20);
 DallasTemperature waterSensors(&oneWire);
 
 float water_temp_c = 0.0f;
-bool ds18b20Enabled = true;
+bool ds18b20Enabled = false;
 static int ds18b20ConsecutiveFails = 0;
 const int MAX_DS18B20_FAILS = 5;
 
@@ -44,15 +44,27 @@ static unsigned long lastWipeAlertTime = 0;
 
 void tankInit()
 {
+#if HW_ENABLE_ULTRASONIC
     pinMode(PIN_TANK_TRIG, OUTPUT);
     pinMode(PIN_TANK_ECHO, INPUT_PULLDOWN);
     digitalWrite(PIN_TANK_TRIG, LOW);
+    tankSensorEnabled = true;
+    Serial.println("Tank Manager: HC-SR04 Initialized");
+#else
+    tankSensorEnabled = false;
+    Serial.println("Tank Manager: HC-SR04 masked (Disabled)");
+#endif
 
+#if HW_ENABLE_DS18B20
     waterSensors.begin();
+    ds18b20Enabled = true;
     Serial.printf("Tank Manager: DS18B20 on GPIO%d, devices: %d\n", PIN_DS18B20, waterSensors.getDeviceCount());
+#else
+    ds18b20Enabled = false;
+    Serial.println("Tank Manager: DS18B20 masked (Disabled)");
+#endif
 
     lastTankRecovery = millis();
-    Serial.println("Tank Manager: HC-SR04 Initialized");
 }
 
 void tankReset()
@@ -326,6 +338,11 @@ void tankUpdate()
 
 void tankTask(void *parameter)
 {
+#if !HW_ENABLE_ULTRASONIC && !HW_ENABLE_DS18B20
+    Serial.println(F("Tank: Both sensors disabled by hardware flag. Task terminating."));
+    vTaskDelete(NULL);
+#endif
+
     Serial.println("Tank Task: Monitoring water level every 5s");
     for (;;)
     {

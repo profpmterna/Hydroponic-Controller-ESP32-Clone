@@ -9,6 +9,42 @@
 #include <Preferences.h>
 // No need <String.h>, Arduino.h covers
 
+// =============================================================================
+// HARDWARE INITIALIZATION FLAGS (Initialization Masking)
+// =============================================================================
+// Set to 1 to enable the component/service, or 0 to mask its initialization.
+
+// Connectivity & Core Services
+#define HW_ENABLE_WIFI 1    // Master toggle for WiFi functionality
+#define HW_ENABLE_NTP 1     // Network Time Protocol & Geo-Location API
+#define HW_ENABLE_OTA 1     // Over-the-Air Firmware Update capability
+#define HW_ENABLE_BACKEND 1 // HTTP Data Logging (Backend/CMS)
+
+// Sensors
+#define HW_ENABLE_DHT22      1 // Air Temperature & Humidity (Thermal Manager)
+#define HW_ENABLE_MHZ19      0 // CO2 Concentration Sensor (CO2 Manager)
+#define HW_ENABLE_TOF        0 // Laser Time-of-Flight Sensor (LaserTOF Manager)
+#define HW_ENABLE_ULTRASONIC 0 // HC-SR04 Water Level Sensor (Tank Manager)
+#define HW_ENABLE_DS18B20    0 // DS18B20 Water Temperature (Tank Manager)
+
+// Actuators & Pumps
+#define HW_ENABLE_CIRC_PUMP  0 // Nutrient Circulation Pump
+#define HW_ENABLE_AC_PUMP    0 // AC Condensate Drain Pump
+
+// Global Pin Definitions (Board Layout Documentation)
+#define PIN_DHT22      6
+#define PIN_DS18B20    7
+#define PIN_MHZ_RX     17
+#define PIN_MHZ_TX     18
+#define PIN_TOF_SDA    4
+#define PIN_TOF_SCL    5
+#define PIN_TANK_TRIG  10
+#define PIN_TANK_ECHO  11
+#define PIN_CIRC_PUMP  15
+#define PIN_AC_FLOAT   8
+#define PIN_AC_PUMP    9
+// =============================================================================
+
 // Global variables, declared as extern to be defined in a single .cpp file (e.g., NTP_Manager.cpp or main.cpp).
 // Geographic latitude.
 extern String g_lat;
@@ -59,7 +95,7 @@ extern String g_deviceId;
 
 // The current version of the firmware. This is used to compare against the remote version
 // to decide if an update is required.
-#define FIRMWARE_VERSION "1.0.0"
+#define FIRMWARE_VERSION "1.0.1"  // Bumped for new commit (2024)
 
 #define OTA_VERSION_URL "https://raw.githubusercontent.com/profpmterna/Hydroponic-Controller-ESP32-Clone/refs/heads/main/OTA%20Files/version.txt"
 #define OTA_FIRMWARE_URL "https://raw.githubusercontent.com/profpmterna/Hydroponic-Controller-ESP32-Clone/refs/heads/main/OTA%20Files/firmware.bin"
@@ -80,12 +116,10 @@ extern String g_deviceId;
 // NTP (Network Time Protocol) settings.
 #define NTP_TIMEOUT_MS 3000
 
-#define PIN_DHT22 6
-#define PIN_DS18B20 7
-
 extern float avg_temp_c;
 extern float avg_humid_pct;
 extern float g_heatIndex;
+extern float water_temp_c;
 extern float g_thermalStdDev;
 #define DHT_SD_THRESHOLD 1.0f   // Jitter threshold for DHT instability
 #define DHT_MAX_SLEW_TEMP 2.0f  // Max degrees change per 2s
@@ -93,26 +127,16 @@ extern float g_thermalStdDev;
 extern bool dhtEnabled;
 extern bool ds18b20Enabled;
 
-// CO2 Management
-#define PIN_MHZ_RX 17 // MH-Z19 RX Pin (Connect to Sensor TX)
-#define PIN_MHZ_TX 18 // MH-Z19 TX Pin (Connect to Sensor RX)
 extern int g_co2Ppm;
 extern int g_co2Temp;
 extern float g_co2StdDev;
 extern bool co2Enabled;
 extern bool co2WarmedUp;
 #define CO2_SD_THRESHOLD 150.0f // Jitter threshold for MH-Z19E instability
-
-// Tank Management Settings
-#define PIN_TANK_TRIG 10
-#define PIN_TANK_ECHO 11
-
-// Laser TOF Management (VL53L0X)
-#define PIN_TOF_SDA 4
-#define PIN_TOF_SCL 5
 extern float g_laserDistanceCm;
 extern float g_laserLevelPct;
 extern float g_laserStdDev;
+extern float g_laserHealthPct;
 extern bool laserEnabled;
 #define TOF_SD_THRESHOLD 1.5f   // Jitter threshold for Laser instability
 #define TOF_JUMP_THRESHOLD 1.2f // Change in cm to trigger fast EMA response
@@ -122,7 +146,7 @@ extern bool laserEnabled;
 // Water surface LaserTOF stability (reflections, refraction)
 #define WATER_REFRACTIVE_INDEX 1.33f
 #define TOF_REFLECTION_THRESHOLD_CM 8.0f // Reject median < this as reflection
-#define TOF_WATER_COR
+#define TOF_WATER_CORRECTION 0.9f         // Completed: Correction factor for water refraction (user-defined)
 
 // Calibration for a 30cm Tank
 #define TANK_HEIGHT_CM 30.0f        // Physical height of the tank
@@ -143,26 +167,26 @@ extern float g_waterLevelPct;
 extern float g_waterDistanceCm;
 extern float g_waterVolumeL;
 extern bool tankSensorEnabled;
+extern float g_tankStdDev;
 extern bool g_tankDryRunRisk;
 extern float g_tankHealthPct;
 
 // Circulation Management
-#define PIN_CIRC_PUMP 15
 #define CIRC_PUMP_DURATION_MINS 5 // Run for the first 5 minutes of every hour
 #define CIRC_PUMP_MAX_TEMP 40.0f  // Max safe water temperature for pump operation
 extern bool g_circPumpRunning;
 extern bool g_circPumpEnabled;
 
 // AC Condensate Management
-#define PIN_AC_FLOAT 8
-#define PIN_AC_PUMP 9
 #define AC_FLOAT_DEBOUNCE_MS 3000UL // 3 sec
 #define AC_EMPTY_DEBOUNCE_MS 1000UL // 1 sec debounce for empty detection
 #define AC_PUMP_RUN_TIME_MS 90000UL // 90 seconds max runtime watchdog
-extern float g_acWaterPumpedToday;  // Ensure this is visible to main.cpp
+extern bool g_acPumpRunning;
+extern float g_acWaterPumpedToday; // Ensure this is visible to main.cpp
 
 // NGROK HTTP Backend Configuration (working)
 #define CMS_SERVER_URL "http://les-galvanic-interruptedly.ngrok-free.dev/api/log"
 #define CMS_API_KEY "MY_SECRET_KEY"
 
 #endif // DEFINE_H
+

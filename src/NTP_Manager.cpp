@@ -76,6 +76,11 @@ void ntpInit() {
 // This function is typically called upon a fresh WiFi connection or when a daily update is desired.
 // It fetches geo-location and timezone information from an external API and then synchronizes time.
 void ntpUpdateOnConnect() {
+#if !HW_ENABLE_NTP
+  Serial.println(F("NTP: Disabled by hardware flag."));
+  return;
+#endif
+
   Serial.println(F("NTP/Geo update on connect"));
   
   // Fetch Geo + TZ

@@ -20,6 +20,11 @@ bool isOtaInProgress()
 
 void otaCheckAfterNtp()
 {
+#if !HW_ENABLE_OTA
+  Serial.println(F("OTA: Disabled by hardware flag."));
+  return;
+#endif
+
   if (g_currentSystemState != STATE_CONNECTED)
     return;
 

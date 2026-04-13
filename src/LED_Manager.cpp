@@ -94,7 +94,7 @@ void ledBlink(int state, unsigned long now)
     }
     else
     {
-      ledSetColor(0, blinkState ? 255 : 0, 0); // 1Hz Green blink (500ms on/off) when backend is offline
+      ledSetColor(blinkState ? 255 : 0, blinkState ? 128 : 0, 0); // Yellow/Orange blink = WiFi OK, Portal Offline
     }
     break;
   case STATE_ERROR:
