@@ -17,32 +17,32 @@
 // Connectivity & Core Services
 #define HW_ENABLE_WIFI 1    // Master toggle for WiFi functionality
 #define HW_ENABLE_NTP 1     // Network Time Protocol & Geo-Location API
-#define HW_ENABLE_OTA 1     // Over-the-Air Firmware Update capability
+#define HW_ENABLE_OTA 0     // Over-the-Air Firmware Update capability
 #define HW_ENABLE_BACKEND 1 // HTTP Data Logging (Backend/CMS)
 
 // Sensors
-#define HW_ENABLE_DHT22      1 // Air Temperature & Humidity (Thermal Manager)
-#define HW_ENABLE_MHZ19      0 // CO2 Concentration Sensor (CO2 Manager)
-#define HW_ENABLE_TOF        0 // Laser Time-of-Flight Sensor (LaserTOF Manager)
+#define HW_ENABLE_DHT22 1      // Air Temperature & Humidity (Thermal Manager)
+#define HW_ENABLE_MHZ19 0      // CO2 Concentration Sensor (CO2 Manager)
+#define HW_ENABLE_TOF 0        // Laser Time-of-Flight Sensor (LaserTOF Manager)
 #define HW_ENABLE_ULTRASONIC 0 // HC-SR04 Water Level Sensor (Tank Manager)
-#define HW_ENABLE_DS18B20    0 // DS18B20 Water Temperature (Tank Manager)
+#define HW_ENABLE_DS18B20 0    // DS18B20 Water Temperature (Tank Manager)
 
 // Actuators & Pumps
-#define HW_ENABLE_CIRC_PUMP  0 // Nutrient Circulation Pump
-#define HW_ENABLE_AC_PUMP    0 // AC Condensate Drain Pump
+#define HW_ENABLE_CIRC_PUMP 0 // Nutrient Circulation Pump
+#define HW_ENABLE_AC_PUMP 0   // AC Condensate Drain Pump
 
 // Global Pin Definitions (Board Layout Documentation)
-#define PIN_DHT22      6
-#define PIN_DS18B20    7
-#define PIN_MHZ_RX     17
-#define PIN_MHZ_TX     18
-#define PIN_TOF_SDA    4
-#define PIN_TOF_SCL    5
-#define PIN_TANK_TRIG  10
-#define PIN_TANK_ECHO  11
-#define PIN_CIRC_PUMP  15
-#define PIN_AC_FLOAT   8
-#define PIN_AC_PUMP    9
+#define PIN_DHT22 6
+#define PIN_DS18B20 7
+#define PIN_MHZ_RX 17
+#define PIN_MHZ_TX 18
+#define PIN_TOF_SDA 4
+#define PIN_TOF_SCL 5
+#define PIN_TANK_TRIG 10
+#define PIN_TANK_ECHO 11
+#define PIN_CIRC_PUMP 15
+#define PIN_AC_FLOAT 8
+#define PIN_AC_PUMP 9
 // =============================================================================
 
 // Global variables, declared as extern to be defined in a single .cpp file (e.g., NTP_Manager.cpp or main.cpp).
@@ -95,7 +95,7 @@ extern String g_deviceId;
 
 // The current version of the firmware. This is used to compare against the remote version
 // to decide if an update is required.
-#define FIRMWARE_VERSION "1.0.1"  // Bumped for new commit (2024)
+#define FIRMWARE_VERSION "1.0.1" // Bumped for new commit (2024)
 
 #define OTA_VERSION_URL "https://raw.githubusercontent.com/profpmterna/Hydroponic-Controller-ESP32-Clone/refs/heads/main/OTA%20Files/version.txt"
 #define OTA_FIRMWARE_URL "https://raw.githubusercontent.com/profpmterna/Hydroponic-Controller-ESP32-Clone/refs/heads/main/OTA%20Files/firmware.bin"
@@ -146,7 +146,7 @@ extern bool laserEnabled;
 // Water surface LaserTOF stability (reflections, refraction)
 #define WATER_REFRACTIVE_INDEX 1.33f
 #define TOF_REFLECTION_THRESHOLD_CM 8.0f // Reject median < this as reflection
-#define TOF_WATER_CORRECTION 0.9f         // Completed: Correction factor for water refraction (user-defined)
+#define TOF_WATER_CORRECTION 0.9f        // Completed: Correction factor for water refraction (user-defined)
 
 // Calibration for a 30cm Tank
 #define TANK_HEIGHT_CM 30.0f        // Physical height of the tank
@@ -189,4 +189,3 @@ extern float g_acWaterPumpedToday; // Ensure this is visible to main.cpp
 #define CMS_API_KEY "MY_SECRET_KEY"
 
 #endif // DEFINE_H
-

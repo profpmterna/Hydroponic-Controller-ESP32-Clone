@@ -28,7 +28,7 @@ void backendSendStatus()
 {
     lastPost = millis();
 
-    if (!wifiConnected || !backendActive)
+    if (!wifiConnected)
         return;
 
     WiFiClient client;
@@ -74,11 +74,12 @@ void backendSendStatus()
     if (httpCode >= 200 && httpCode < 400)
     {
         Serial.printf("[SUCCESS] HTTP %d | %s\n", httpCode, response.substring(0, 100));
-        lastPost = millis();
+        backendActive = true;
     }
     else
     {
         Serial.printf("[FAIL] HTTP %d: %s\n", httpCode, response.substring(0, 100));
+        backendActive = false;
     }
     http.end();
 }
@@ -90,16 +91,12 @@ void backendTask(void *parameter)
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 
-    Serial.println("Backend: Initial availability check after NTP/OTA.");
+    Serial.println("Backend: Starting periodic JSON status sends every 60s.");
 
-    // Perform one-time availability check before starting periodic sends
-    backendCheckAvailability();
-
-    Serial.println("Backend: Check complete. Starting periodic status sends.");
 
     for (;;)
     {
-        if (wifiConnected && backendActive)
+        if (wifiConnected)
         {
             unsigned long now = millis();
             if (now - lastPost > POST_INTERVAL)
@@ -111,50 +108,7 @@ void backendTask(void *parameter)
     }
 }
 
-void backendCheckAvailability();
-
-// Check backend server availability with HEAD request (no JSON send)
-void backendCheckAvailability()
-{
-    if (!wifiConnected)
-    {
-        Serial.println("[BACKEND] WiFi not connected, skipping check.");
-        backendActive = false;
-        return;
-    }
-
-    WiFiClient client;
-    client.setTimeout(10000); // 10s timeout
-
-    HTTPClient http;
-    String url = CMS_SERVER_URL;
-    Serial.printf("[BACKEND] Availability check HEAD to: %s\n", url.c_str());
-
-    http.begin(client, url);
-    http.addHeader("X-API-Key", CMS_API_KEY);
-    http.setFollowRedirects(HTTPC_DISABLE_FOLLOW_REDIRECTS);
-
-    int httpCode = http.sendRequest("GET"); // GET request for availability (HEAD 405, use GET no body)
-    String response = http.getString();
-
-    Serial.printf("[BACKEND] HEAD %d (%d bytes)\n", httpCode, response.length());
-
-    if (httpCode >= 200 && httpCode < 500)
-    { // Accept 2xx-4xx as available (405 allowed, server up)
-        backendActive = true;
-        Serial.printf("[BACKEND] Server available (HTTP %d)\n", httpCode);
-    }
-    else
-    {
-        backendActive = false;
-        Serial.printf("[BACKEND] Server unavailable (HTTP %d): %s\n", httpCode, response.substring(0, 100).c_str());
-    }
-
-    http.end();
-}
-
 void backendInit() {} // Stateless
 
 void backendSendStatus();
 bool isBackendConnected();
-void backendCheckAvailability();

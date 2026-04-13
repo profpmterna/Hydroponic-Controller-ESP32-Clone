@@ -7,6 +7,6 @@ void backendInit();
 void backendTask(void *parameter);
 void backendSendStatus();
 bool isBackendConnected();
-void backendCheckAvailability();
+
 
 #endif
